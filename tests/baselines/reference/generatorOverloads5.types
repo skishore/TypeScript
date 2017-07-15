@@ -3,17 +3,17 @@ module M {
 >M : typeof M
 
     function f(s: string): Iterable<any>;
->f : { (s: string): Iterable<any>; (s: number): Iterable<any>; }
+>f : { (s: string): Iterable<any, any, any>; (s: number): Iterable<any, any, any>; }
 >s : string
->Iterable : Iterable<T>
+>Iterable : Iterable<T, U, V>
 
     function f(s: number): Iterable<any>;
->f : { (s: string): Iterable<any>; (s: number): Iterable<any>; }
+>f : { (s: string): Iterable<any, any, any>; (s: number): Iterable<any, any, any>; }
 >s : number
->Iterable : Iterable<T>
+>Iterable : Iterable<T, U, V>
 
     function* f(s: any): Iterable<any> { }
->f : { (s: string): Iterable<any>; (s: number): Iterable<any>; }
+>f : { (s: string): Iterable<any, any, any>; (s: number): Iterable<any, any, any>; }
 >s : any
->Iterable : Iterable<T>
+>Iterable : Iterable<T, U, V>
 }

@@ -8,23 +8,21 @@ interface SymbolConstructor {
     readonly iterator: symbol;
 }
 
-interface IteratorResult<T> {
-    done: boolean;
-    value: T;
+type IteratorResult<T, U = any> =
+    {done: false, value: T} | {done: true, value: U};
+
+interface Iterator<T, U = any, V = any> {
+    next(value?: V): IteratorResult<T, U>;
+    return?(value?: V): IteratorResult<T, U>;
+    throw?(e?: any): IteratorResult<T, U>;
 }
 
-interface Iterator<T> {
-    next(value?: any): IteratorResult<T>;
-    return?(value?: any): IteratorResult<T>;
-    throw?(e?: any): IteratorResult<T>;
+interface Iterable<T, U = any, V = any> {
+    [Symbol.iterator](): Iterator<T, U, V>;
 }
 
-interface Iterable<T> {
-    [Symbol.iterator](): Iterator<T>;
-}
-
-interface IterableIterator<T> extends Iterator<T> {
-    [Symbol.iterator](): IterableIterator<T>;
+interface IterableIterator<T, U = any, V = any> extends Iterator<T, U, V> {
+    [Symbol.iterator](): IterableIterator<T, U, V>;
 }
 
 interface Array<T> {

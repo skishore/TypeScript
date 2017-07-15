@@ -7030,15 +7030,15 @@ namespace ts {
         }
 
         function getGlobalIterableType(reportErrors: boolean) {
-            return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType("Iterable" as __String, /*arity*/ 1, reportErrors)) || emptyGenericType;
+            return deferredGlobalIterableType || (deferredGlobalIterableType = getGlobalType("Iterable" as __String, /*arity*/ 3, reportErrors)) || emptyGenericType;
         }
 
         function getGlobalIteratorType(reportErrors: boolean) {
-            return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType("Iterator" as __String, /*arity*/ 1, reportErrors)) || emptyGenericType;
+            return deferredGlobalIteratorType || (deferredGlobalIteratorType = getGlobalType("Iterator" as __String, /*arity*/ 3, reportErrors)) || emptyGenericType;
         }
 
         function getGlobalIterableIteratorType(reportErrors: boolean) {
-            return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType("IterableIterator" as __String, /*arity*/ 1, reportErrors)) || emptyGenericType;
+            return deferredGlobalIterableIteratorType || (deferredGlobalIterableIteratorType = getGlobalType("IterableIterator" as __String, /*arity*/ 3, reportErrors)) || emptyGenericType;
         }
 
         function getGlobalTypeOrUndefined(name: __String, arity = 0): ObjectType {
@@ -7076,11 +7076,11 @@ namespace ts {
         }
 
         function createIterableType(iteratedType: Type): Type {
-            return createTypeFromGenericGlobalType(getGlobalIterableType(/*reportErrors*/ true), [iteratedType]);
+            return createTypeFromGenericGlobalType(getGlobalIterableType(/*reportErrors*/ true), [iteratedType, anyType, anyType]);
         }
 
         function createIterableIteratorType(iteratedType: Type): Type {
-            return createTypeFromGenericGlobalType(getGlobalIterableIteratorType(/*reportErrors*/ true), [iteratedType]);
+            return createTypeFromGenericGlobalType(getGlobalIterableIteratorType(/*reportErrors*/ true), [iteratedType, anyType, anyType]);
         }
 
         function createArrayType(elementType: Type): ObjectType {
@@ -20518,8 +20518,33 @@ namespace ts {
                 }
             }
 
-            const nextValue = nextResult && getTypeOfPropertyOfType(nextResult, "value" as __String);
-            if (!nextValue) {
+            // At this point, nextResult should be a subtype of IteratorResult<T,U> for some iterated type T
+            // and some return type U. We need to filter on done being false to get just the iterated type.
+            function isTypeBoolean(type: Type): boolean {
+              return type && !!(type.flags & TypeFlags.Boolean);
+            }
+            function isTypeFalse(type: Type): boolean {
+              return type && type.flags & TypeFlags.BooleanLiteral &&
+                     (<IntrinsicType>type).intrinsicName === "false";
+            }
+            function collectIteratorValueType(iteratorResult: Type): Type {
+              if (iteratorResult.flags & TypeFlags.Union) {
+                const valueTypes = (<UnionType>iteratorResult).types.map(collectIteratorValueType);
+                return getUnionType(valueTypes, /*subtypeReduction*/ true);
+              }
+              // For non-unions, check that "done" is either of type "boolean" or "false".
+              // The former case comes up for iterators with the same iterated and return type.
+              const doneType = getTypeOfPropertyOfType(iteratorResult, "done" as __String);
+              if (isTypeBoolean(doneType) || isTypeFalse(doneType)) {
+                const result = getTypeOfPropertyOfType(iteratorResult, "value" as __String);
+                return result ? result : neverType;
+              }
+              return neverType;
+            }
+
+            // Check that we have an actual value type.
+            const nextValue = nextResult && collectIteratorValueType(nextResult);
+            if (!nextValue || nextValue.flags & TypeFlags.Never) {
                 if (errorNode) {
                     error(errorNode, isAsyncIterator
                         ? Diagnostics.The_type_returned_by_the_next_method_of_an_async_iterator_must_be_a_promise_for_a_type_with_a_value_property

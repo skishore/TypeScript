@@ -9,8 +9,8 @@ class Bar extends Foo { y: string }
 >y : string
 
 function* g(): IterableIterator<Foo> {
->g : () => IterableIterator<Foo>
->IterableIterator : IterableIterator<T>
+>g : () => IterableIterator<Foo, any, any>
+>IterableIterator : IterableIterator<T, U, V>
 >Foo : Foo
 
     yield;

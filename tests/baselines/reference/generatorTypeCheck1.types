@@ -1,5 +1,5 @@
 === tests/cases/conformance/es6/yieldExpressions/generatorTypeCheck1.ts ===
 function* g1(): Iterator<string> { }
->g1 : () => Iterator<string>
->Iterator : Iterator<T>
+>g1 : () => Iterator<string, any, any>
+>Iterator : Iterator<T, U, V>
 
